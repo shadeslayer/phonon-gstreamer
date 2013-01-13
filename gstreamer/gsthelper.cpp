@@ -15,8 +15,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <gst/interfaces/propertyprobe.h>
 #include <gst/gst.h>
+#include "phonon-config-gstreamer.h" // krazy:exclude=includes
+
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+#include <gst/interfaces/propertyprobe.h>
+#endif
+
 #include "gsthelper.h"
 #include "mediaobject.h"
 #include "backend.h"
@@ -41,6 +46,8 @@ QList<QByteArray> GstHelper::extractProperties(GstElement *elem, const QByteArra
     Q_ASSERT(elem);
     QList<QByteArray> list;
 
+#warning FIXME Implement once we have an alternative for property probes
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     if (GST_IS_PROPERTY_PROBE(elem)) {
         GstPropertyProbe *probe = GST_PROPERTY_PROBE(elem);
         const GParamSpec *devspec = 0;
@@ -57,6 +64,7 @@ QList<QByteArray> GstHelper::extractProperties(GstElement *elem, const QByteArra
                 g_value_array_free (array);
         }
     }
+#endif
     return list;
 }
 
@@ -69,11 +77,13 @@ bool GstHelper::setProperty(GstElement *elem, const char *propertyName, const QB
 {
     Q_ASSERT(elem);
     Q_ASSERT(propertyName && strlen(propertyName));
-
+#warning FIXME Implement once we have an alternative for property probes
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     if (GST_IS_PROPERTY_PROBE(elem) && gst_property_probe_get_property( GST_PROPERTY_PROBE( elem), propertyName ) ) {
         g_object_set(G_OBJECT(elem), propertyName, propertyValue.constData(), NULL);
         return true;
     }
+#endif
     return false;
 }
 
@@ -85,13 +95,15 @@ QByteArray GstHelper::property(GstElement *elem, const char *propertyName)
     Q_ASSERT(elem);
     Q_ASSERT(propertyName && strlen(propertyName));
     QByteArray retVal;
-
+#warning FIXME Implement once we have an alternative for property probes
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     if (GST_IS_PROPERTY_PROBE(elem) && gst_property_probe_get_property( GST_PROPERTY_PROBE(elem), propertyName)) {
         gchar *value = NULL;
         g_object_get (G_OBJECT(elem), propertyName, &value, NULL);
         retVal = QByteArray(value);
         g_free (value);
     }
+#endif
     return retVal;
 }
 
