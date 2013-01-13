@@ -17,6 +17,7 @@
 
 #include "videowidget.h"
 #include "x11renderer.h"
+#include "phonon-config-gstreamer.h" //krazy:exclude=include
 
 #ifndef Q_WS_QWS
 
@@ -27,8 +28,12 @@
 #include <QtGui/QPainter>
 #include <X11/Xlib.h>
 #include <gst/gst.h>
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
 #include <gst/interfaces/xoverlay.h>
 #include <gst/interfaces/propertyprobe.h>
+#else
+#include <gst/video/videooverlay.h>
+#endif
 
 QT_BEGIN_NAMESPACE
 
@@ -172,15 +177,21 @@ void X11Renderer::handlePaint(QPaintEvent *)
 
 void X11Renderer::setOverlay()
 {
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     if (m_videoSink && GST_IS_X_OVERLAY(m_videoSink)) {
+#else
+    if (m_videoSink && GST_IS_VIDEO_OVERLAY(m_videoSink)) {
+#endif
         WId windowId = m_renderWidget->winId();
         // Even if we have created a winId at this point, other X applications
         // need to be aware of it.
         QApplication::syncX();
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,31,0)
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,31,0) && GST_VERSION < GST_VERSION_CHECK(1,0,0,0)
         gst_x_overlay_set_window_handle(GST_X_OVERLAY(m_videoSink), windowId);
-#else
+#elseif GST_VERSION < GST_VERSION_CHECK(0,10,31,0)
         gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(m_videoSink), windowId);
+#else
+        gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(m_videoSink), windowId);
 #endif // GST_VERSION
     }
     windowExposed();
@@ -190,8 +201,13 @@ void X11Renderer::setOverlay()
 void X11Renderer::windowExposed()
 {
     QApplication::syncX();
+#if GST_VERSION < GST_VERSION_CHECK(1,0,0,0)
     if (m_videoSink && GST_IS_X_OVERLAY(m_videoSink))
         gst_x_overlay_expose(GST_X_OVERLAY(m_videoSink));
+#else
+    if (m_videoSink && GST_IS_VIDEO_OVERLAY(m_videoSink))
+        gst_video_overlay_expose(GST_VIDEO_OVERLAY(m_videoSink));
+#endif
 }
 
 }
