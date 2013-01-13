@@ -16,6 +16,8 @@
 */
 
 #include "videowidget.h"
+#include "phonon-config-gstreamer.h" //krazy:exclude=include
+
 #include <QtCore/QEvent>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QPalette>
@@ -24,8 +26,12 @@
 #include <QtGui/QBoxLayout>
 #include <QApplication>
 #include <gst/gst.h>
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
+#else
+#include <gst/video/navigation.h>
+#endif
 #include <gst/video/video.h>
 #include "abstractrenderer.h"
 #include "backend.h"
@@ -515,7 +521,13 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
 
     gint width;
     gint height;
-    GstCaps *caps = gst_pad_get_caps(pad, NULL);
+    GstCaps *caps;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    caps = gst_pad_get_caps(pad, NULL);
+#else
+    caps = gst_pad_query_caps(pad, NULL);
+#endif
+
     GstStructure *structure = gst_caps_get_structure(caps, 0);
     gst_caps_unref(caps);
     gst_structure_get_int(structure, "width", &width);
