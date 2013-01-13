@@ -48,9 +48,14 @@ Pipeline::Pipeline(QObject *parent)
     , m_resetting(false)
 {
     qRegisterMetaType<GstState>("GstState");
+#if GST_VERSION < GST_VERSION_CHECK(1,0,0,0)
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     gst_object_ref(m_pipeline);
+    gst_object_sink(m_pipeline);
+#else
+    m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin", NULL));
     gst_object_ref_sink(m_pipeline);
+#endif
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
     g_signal_connect(m_pipeline, "notify::source", G_CALLBACK(cb_setupSource), this);
