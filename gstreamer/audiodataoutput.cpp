@@ -61,11 +61,20 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     g_object_set(G_OBJECT(sink), "signal-handoffs", true, NULL);
 
     //G_BYTE_ORDER is the host machine's endianess
-    GstCaps *caps = gst_caps_new_simple("audio/x-raw-int",
+    GstCaps *caps;
+#if GST_VERSION < GST_VERSION_CHECK(1,0,0,0)
+    caps = gst_caps_new_simple("audio/x-raw-int",
                                         "endianess", G_TYPE_INT, G_BYTE_ORDER,
                                         "width", G_TYPE_INT, 16,
                                         "depth", G_TYPE_INT, 16,
                                         NULL);
+#else
+    caps = gst_caps_new_simple("audio/x-raw",
+                                        "endianess", G_TYPE_INT, G_BYTE_ORDER,
+                                        "width", G_TYPE_INT, 16,
+                                        "depth", G_TYPE_INT, 16,
+                                        NULL);
+#endif
 
     gst_bin_add_many(GST_BIN(m_queue), sink, convert, queue, NULL);
     gst_element_link(queue, convert);

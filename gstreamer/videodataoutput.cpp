@@ -52,18 +52,31 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
 
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
     GstElement* queue = gst_element_factory_make("queue", NULL);
-    GstElement* convert = gst_element_factory_make("ffmpegcolorspace", NULL);
+    GstElement* convert;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    convert = gst_element_factory_make("ffmpegcolorspace", NULL);
+#else
+    convert = gst_element_factory_make("videoconvert", NULL);
+#endif
 
     g_signal_connect(sink, "handoff", G_CALLBACK(processBuffer), this);
     g_object_set(G_OBJECT(sink), "signal-handoffs", true, NULL);
 
         // Save ourselves a metric crapton of work by simply requesting
         // a format native to Qt.
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     GstCaps *caps = gst_caps_new_simple("video/x-raw-rgb",
                                         "bpp", G_TYPE_INT, 24,
                                         "depth", G_TYPE_INT, 24,
                                         "endianess", G_TYPE_INT, G_BYTE_ORDER,
                                         NULL);
+#else
+    GstCaps *caps = gst_caps_new_simple("video/x-raw",
+                                        "bpp", G_TYPE_INT, 24,
+                                        "depth", G_TYPE_INT, 24,
+                                        "endianess", G_TYPE_INT, G_BYTE_ORDER,
+                                        NULL);
+#endif
 
     gst_bin_add_many(GST_BIN(m_queue), sink, convert, queue, NULL);
     gst_element_link(queue, convert);

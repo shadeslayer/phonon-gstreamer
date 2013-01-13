@@ -97,7 +97,11 @@ void VideoWidget::setupVideoBin()
         m_videoplug = gst_element_factory_make ("identity", NULL);
 
         //Colorspace ensures that the output of the stream matches the input format accepted by our video sink
+#if GST_VERSION < GST_VERSION_CHECK(1,0,0,0)
         m_colorspace = gst_element_factory_make ("ffmpegcolorspace", NULL);
+#else
+        m_colorspace = gst_element_factory_make ("videoconvert", NULL);
+#endif
 
         //Video scale is used to prepare the correct aspect ratio and scale.
         GstElement *videoScale = gst_element_factory_make ("videoscale", NULL);
@@ -115,7 +119,13 @@ void VideoWidget::setupVideoBin()
                 // For video balance to work we have to first ensure that the video is in YUV colorspace,
                 // then hand it off to the videobalance filter before finally converting it back to RGB.
                 // Hence we nede a videoFilter to convert the colorspace before and after videobalance
-                GstElement *m_colorspace2 = gst_element_factory_make ("ffmpegcolorspace", NULL);
+                GstElement *m_colorspace2;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                m_colorspace2 = gst_element_factory_make ("ffmpegcolorspace", NULL);
+#else
+                m_colorspace2 = gst_element_factory_make ("videoconvert", NULL);
+#endif
+
                 gst_bin_add_many(GST_BIN(m_videoBin), m_videoBalance, m_colorspace2, NULL);
                 success = gst_element_link_many(queue, m_colorspace, m_videoBalance, m_colorspace2, videoScale, m_videoplug, videoSink, NULL);
             } else {
@@ -532,7 +542,6 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
     gst_caps_unref(caps);
     gst_structure_get_int(structure, "width", &width);
     gst_structure_get_int(structure, "height", &height);
-    gst_structure_free(structure);
 
     QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
 }

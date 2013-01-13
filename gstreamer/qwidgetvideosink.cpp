@@ -108,6 +108,7 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
     return rc;
 }
 
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
 static GstStaticPadTemplate template_factory_yuv =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
@@ -127,7 +128,27 @@ static GstStaticPadTemplate template_factory_rgb =
                                             "width = (int) [ 1, MAX ], "
                                             "height = (int) [ 1, MAX ],"
                                             "bpp = (int) 32"));
+#else
+static GstStaticPadTemplate template_factory_yuv =
+    GST_STATIC_PAD_TEMPLATE("sink",
+                            GST_PAD_SINK,
+                            GST_PAD_ALWAYS,
+                            GST_STATIC_CAPS("video/x-raw, "
+                                            "framerate = (fraction) [ 0, MAX ], "
+                                            "width = (int) [ 1, MAX ], "
+                                            "height = (int) [ 1, MAX ],"
+                                            "bpp = (int) 32"));
 
+static GstStaticPadTemplate template_factory_rgb =
+    GST_STATIC_PAD_TEMPLATE("sink",
+                            GST_PAD_SINK,
+                            GST_PAD_ALWAYS,
+                            GST_STATIC_CAPS("video/x-raw, "
+                                            "framerate = (fraction) [ 0, MAX ], "
+                                            "width = (int) [ 1, MAX ], "
+                                            "height = (int) [ 1, MAX ],"
+                                            "bpp = (int) 32"));
+#endif
 template <VideoFormat FMT>
 struct template_factory;
 
