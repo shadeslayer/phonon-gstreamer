@@ -23,8 +23,14 @@
 #include "plugininstaller.h"
 #include "streamreader.h"
 #include "gsthelper.h"
+#include "phonon-config-gstreamer.h"
+#include <gst/gst.h>
 #include <gst/pbutils/missing-plugins.h>
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
 #include <gst/interfaces/navigation.h>
+#else
+#include <gst/video/navigation.h>
+#endif
 #include <gst/app/gstappsrc.h>
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
@@ -51,7 +57,11 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
+#else
+    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL, NULL);
+#endif
     g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
     g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
 
