@@ -18,12 +18,17 @@
 */
 
 #include <cmath>
+#include "phonon-config-gstreamer.h" //krazy:exclude=include
+#include <gst/gst.h>
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
+#else
+#include <gst/video/navigation.h>
+#endif
 #include "mediaobject.h"
 #include "backend.h"
 #include "streamreader.h"
-#include "phonon-config-gstreamer.h"
 #include "debug.h"
 #include "gsthelper.h"
 #include "pipeline.h"
