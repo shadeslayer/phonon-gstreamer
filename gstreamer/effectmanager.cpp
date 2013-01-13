@@ -15,7 +15,11 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <gst/gst.h>
+#include "phonon-config-gstreamer.h" // krazy:exclude=includes
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
 #include <gst/interfaces/propertyprobe.h>
+#endif
 #include "effectmanager.h"
 #include "backend.h"
 #include "gsthelper.h"
@@ -42,7 +46,11 @@ EffectManager::EffectManager(Backend *backend)
         : QObject(backend)
         , m_backend(backend)
 {
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     GList *factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
+#else
+    GList *factoryList = gst_registry_get_feature_list(gst_registry_get (), GST_TYPE_ELEMENT_FACTORY);
+#endif
     QString name;
     QString klass;
     QString description;
