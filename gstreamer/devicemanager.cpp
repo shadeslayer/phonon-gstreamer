@@ -15,7 +15,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <gst/gst.h>
+#include "phonon-config-gstreamer.h"
+
+#if GST_VERSION < GST_VERSION_CHECK(1,0,0,0)
 #include <gst/interfaces/propertyprobe.h>
+#endif
+
 #include "devicemanager.h"
 #include "backend.h"
 #include "gsthelper.h"
@@ -55,7 +61,7 @@ VideoCaptureDevice::VideoCaptureDevice(DeviceManager *manager, const QByteArray 
 
         if (dev) {
             gchar *deviceDescription = NULL;
-
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
             if (GST_IS_PROPERTY_PROBE(dev) && gst_property_probe_get_property( GST_PROPERTY_PROBE(dev), "device" ) ) {
                 g_object_set (G_OBJECT(dev), "device", gstId.constData(), NULL);
                 g_object_get (G_OBJECT(dev), "device-name", &deviceDescription, NULL);
@@ -64,6 +70,15 @@ VideoCaptureDevice::VideoCaptureDevice(DeviceManager *manager, const QByteArray 
                 gst_element_set_state(dev, GST_STATE_NULL);
                 gst_object_unref (dev);
             }
+#else
+#warning FIXME Some sort of checks here would be nice, see code above
+            g_object_set (G_OBJECT(dev), "device", gstId.constData(), NULL);
+            g_object_get (G_OBJECT(dev), "device-name", &deviceDescription, NULL);
+            description = QByteArray(deviceDescription);
+            g_free (deviceDescription);
+            gst_element_set_state(dev, GST_STATE_NULL);
+            gst_object_unref (dev);
+#endif
         }
     }
 }
@@ -85,7 +100,7 @@ AudioDevice::AudioDevice(DeviceManager *manager, const QByteArray &gstId)
 
         if (aSink) {
             gchar *deviceDescription = NULL;
-
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
             if (GST_IS_PROPERTY_PROBE(aSink) && gst_property_probe_get_property( GST_PROPERTY_PROBE(aSink), "device" ) ) {
                 g_object_set (G_OBJECT(aSink), "device", gstId.constData(), NULL);
                 g_object_get (G_OBJECT(aSink), "device-name", &deviceDescription, NULL);
@@ -94,6 +109,15 @@ AudioDevice::AudioDevice(DeviceManager *manager, const QByteArray &gstId)
                 gst_element_set_state(aSink, GST_STATE_NULL);
                 gst_object_unref (aSink);
             }
+#else
+#warning FIXME Some sort of checks here would be nice, see code above
+            g_object_set (G_OBJECT(aSink), "device", gstId.constData(), NULL);
+            g_object_get (G_OBJECT(aSink), "device-name", &deviceDescription, NULL);
+            description = QByteArray(deviceDescription);
+            g_free (deviceDescription);
+            gst_element_set_state(aSink, GST_STATE_NULL);
+            gst_object_unref (aSink);
+#endif
         }
     }
 }
