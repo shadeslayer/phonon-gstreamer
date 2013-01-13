@@ -254,7 +254,11 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
         return m_state;
     bool allFound = true;
     foreach (QString plugin, m_pluginList.keys()) {
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         if (!gst_default_registry_check_feature_version(plugin.toLocal8Bit().data(), 0, 10, 0)) {
+#else
+        if (!gst_registry_check_feature_version(gst_registry_get(), plugin.toLocal8Bit().data(), 0, 10, 0)) {
+#endif
             allFound = false;
             break;
         }
