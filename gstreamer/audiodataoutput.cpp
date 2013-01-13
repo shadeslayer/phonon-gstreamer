@@ -26,12 +26,14 @@
 #include "gsthelper.h"
 #include "medianode.h"
 #include "medianodeevent.h"
+#include "phonon-config-gstreamer.h"
 #include <QtCore/QVector>
 #include <QtCore/QMap>
 #include <phonon/audiooutput.h>
 
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
+#include <gst/gst.h>
 
 QT_BEGIN_HEADER
 QT_BEGIN_NAMESPACE
@@ -122,15 +124,27 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
         return;
 
     // determine the number of channels
-    GstCaps *caps = gst_pad_get_caps(pad, NULL);
+    GstCaps *caps;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    caps = gst_pad_get_caps(pad, NULL);
+#else
+    caps = gst_pad_query_caps(pad, NULL);
+#endif
     GstStructure *structure = gst_caps_get_structure(caps, 0);
     gst_caps_unref(caps);
     gst_structure_get_int(structure, "channels", &that->m_channels);
 
     // Let's get the buffers
     gsize bufferSize;
-    gint16 *gstBufferData = reinterpret_cast<gint16 *>(gst_buffer_map(buffer, &bufferSize, NULL, GST_MAP_READ));
+    gint16 *gstBufferData;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0) && GST_VERSION > GST_VERSION_CHECK (0,11,1,0)
+    gstBufferData = reinterpret_cast<gint16 *>(gst_buffer_map(buffer, &bufferSize, NULL, GST_MAP_READ));
+#else
+    GstMapInfo *info;
+    gstBufferData = reinterpret_cast<gint16 *>(gst_buffer_map(buffer,info, GST_MAP_READ));
+    bufferSize = info->size;
     guint gstBufferSize = bufferSize / sizeof(gint16);
+#endif
 
     if (gstBufferSize == 0) {
         qWarning() << Q_FUNC_INFO << ": received a buffer of 0 size ... doing nothing";
