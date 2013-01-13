@@ -770,7 +770,17 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
 {
     StreamReader *reader = static_cast<StreamReader*>(data);
     GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
-    gpointer bufData = gst_buffer_map(buf, NULL, NULL, GST_MAP_WRITE);
+    gpointer bufData;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0) && GST_VERSION > GST_VERSION_CHECK (0,11,0,0)
+    bufData = gst_buffer_map(buf, NULL, NULL, GST_MAP_WRITE);
+#else
+    gboolean success;
+    GstMapInfo *info;
+    success = gst_buffer_map(buf, info, GST_MAP_WRITE);
+    if (success)
+        bufData = (gpointer)info->data;
+
+#endif
     reader->read(reader->currentPos(), buffsize, (char*)bufData);
     gst_app_src_push_buffer(appSrc, buf);
 }
