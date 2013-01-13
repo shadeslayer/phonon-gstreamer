@@ -25,7 +25,9 @@
 #include "devicemanager.h"
 #include "effectmanager.h"
 #include "volumefadereffect.h"
+#if GST_VERSION < GST_VERSION_CHECK(1,0,0,0)
 #include <gst/interfaces/propertyprobe.h>
+#endif
 #include <phonon/pulsesupport.h>
 #include <phonon/GlobalDescriptionContainer>
 
@@ -230,7 +232,11 @@ QStringList Backend::availableMimeTypes() const
     }
 
     // Iterate over all audio and video decoders and extract mime types from sink caps
+#if GST_VERSION < GST_VERSION_CHECK(1,0,0,0)
     GList* factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
+#else
+    GList* factoryList = gst_registry_get_feature_list(gst_registry_get (), GST_TYPE_ELEMENT_FACTORY);
+#endif
     for (GList* iter = g_list_first(factoryList) ; iter != NULL ; iter = g_list_next(iter)) {
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         QString klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
