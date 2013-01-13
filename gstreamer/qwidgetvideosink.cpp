@@ -19,6 +19,9 @@
 #include "videowidget.h"
 #include "qwidgetvideosink.h"
 
+#include <gst/gst.h>
+#include "phonon-config-gstreamer.h" //krazy:exclude=include
+
 QT_BEGIN_NAMESPACE
 
 namespace Phonon
@@ -83,7 +86,18 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
         QWidgetVideoSink<FMT> *self = G_TYPE_CHECK_INSTANCE_CAST(sink, QWidgetVideoSinkClass<FMT>::get_type(), QWidgetVideoSink<FMT>);
         QByteArray frame;
         gsize bufSize;
-        gpointer bufData = gst_buffer_map(buf, &bufSize, NULL, GST_MAP_READ);
+        gpointer bufData;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+        bufData = gst_buffer_map(buf, &bufSize, NULL, GST_MAP_READ);
+#else
+        GstMapInfo *info;
+        gboolean success;
+        success = gst_buffer_map(buf,info, GST_MAP_READ);
+        if (success) {
+            bufData = (gpointer)info->data;
+            bufSize = info->size;
+        }
+#endif
         frame.resize(bufSize);
         memcpy(frame.data(), bufData, bufSize);
         NewFrameEvent *frameEvent = new NewFrameEvent(frame, self->width, self->height);
