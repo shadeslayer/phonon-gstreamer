@@ -23,7 +23,9 @@
 #include "videodataoutput.h"
 #include <phonon/experimental/videoframe2.h>
 #include "medianodeevent.h"
+#include "phonon-config-gstreamer.h" //krazy:exclude=include
 
+#include <gst/gst.h>
 #include <gst/gstbin.h>
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
@@ -86,8 +88,12 @@ VideoDataOutput::~VideoDataOutput()
 void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad, gpointer gThat)
 {
     VideoDataOutput *that = reinterpret_cast<VideoDataOutput*>(gThat);
-
-    GstCaps *caps = gst_pad_get_caps(pad, NULL);
+    GstCaps *caps;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    caps = gst_pad_get_caps(pad, NULL);
+#else
+    caps = gst_pad_query_caps(pad,NULL);
+#endif
     GstStructure* structure = gst_caps_get_structure(caps, 0);
     gst_caps_unref(caps);
     int width;
@@ -97,7 +103,15 @@ void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
     gst_structure_get_int(structure, "width", &width);
     gst_structure_get_int(structure, "height", &height);
     aspect = (double)width/height;
-    const char *bufferData = reinterpret_cast<const char*>(gst_buffer_map(buffer, NULL, NULL, GST_MAP_READ));
+    const char *bufferData;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    bufferData = reinterpret_cast<const char*>(gst_buffer_map(buffer, NULL, NULL, GST_MAP_READ));
+#else
+    GstMapInfo *info;
+    gboolean success = gst_buffer_map(buffer, info, GST_MAP_READ);
+    if (success)
+        bufferData = reinterpret_cast<const char*>(info->data);
+#endif
     const Experimental::VideoFrame2 f = {
         width,
         height,
