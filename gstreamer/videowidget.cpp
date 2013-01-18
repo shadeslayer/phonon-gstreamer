@@ -31,6 +31,7 @@
 #include <gst/interfaces/propertyprobe.h>
 #else
 #include <gst/video/navigation.h>
+#include <gst/video/video-info.h>
 #endif
 #include <gst/video/video.h>
 #include "abstractrenderer.h"
@@ -535,15 +536,13 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     caps = gst_pad_get_caps(pad, NULL);
 #else
-    caps = gst_pad_query_caps(pad, NULL);
+    caps = gst_pad_get_current_caps(pad);
 #endif
 
-    GstStructure *structure = gst_caps_get_structure(caps, 0);
+    GstVideoInfo info;
+    if ( gst_video_info_from_caps(&info, caps) )
+        QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(info.width, info.height)));
     gst_caps_unref(caps);
-    gst_structure_get_int(structure, "width", &width);
-    gst_structure_get_int(structure, "height", &height);
-
-    QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
 }
 
 }
