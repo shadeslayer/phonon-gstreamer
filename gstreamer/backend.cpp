@@ -171,11 +171,12 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
             QWidget *widget =  qobject_cast<QWidget*>(parent);
             return new VideoWidget(this, widget);
         }
-#ifndef PHONON_NO_GRAPHICSVIEW
+#warning FIXME: Enable this once we port VGO to GStreamer 1.0
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     case VideoGraphicsObjectClass:
         return new VideoGraphicsObject(this, parent);
-#endif // PHONON_NO_GRAPHICSVIEW
-#endif // QT_NO_PHONON_VIDEO
+#endif
+#endif //QT_NO_PHONON_VIDEO
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
     case VolumeFaderEffectClass:
         return new VolumeFaderEffect(this, parent);
